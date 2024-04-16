@@ -182,6 +182,6 @@ def main():
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
 
-
+#Test
 if __name__ == '__main__':
     main()
