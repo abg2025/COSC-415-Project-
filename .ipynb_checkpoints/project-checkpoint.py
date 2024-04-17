@@ -1,5 +1,3 @@
-## This code was copied from https://github.com/pytorch/examples/blob/main/mnist/main.py
-
 from __future__ import print_function
 import argparse
 import torch
@@ -90,17 +88,11 @@ def test(model, device, test_loader):
             test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
 
             # Output tensor check
-            print("Output shape:", output.shape)  # Shape of output tensor
-            print("First output (log probabilities):", output[0])  # Log probabilities of the first sample
-
+            
             pred = output.argmax(dim=1)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
             total += target.size(0)
 
-            # Checking predictions against targets
-            if total < 100:  # Only print for the first few to avoid too much output
-                print("Predictions:", pred)
-                print("Actual labels:", target)
 
     test_loss /= len(test_loader.dataset)
     accuracy = 100. * correct / len(test_loader.dataset)
@@ -147,6 +139,8 @@ def main():
     else:
         device = torch.device("cpu")
 
+    print(device)
+
     train_kwargs = {'batch_size': args.batch_size}
     test_kwargs = {'batch_size': args.test_batch_size}
     if use_cuda:
@@ -165,8 +159,8 @@ def main():
     train_dataset = ImageFolder('new_train', transform=transform)
     test_dataset = ImageFolder('new_test', transform=transform)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
-    test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs)
+    train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs, shuffle=False)
 
     print(test_loader)
 
@@ -174,6 +168,9 @@ def main():
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    
+    
+    
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(model, device, test_loader)
@@ -185,3 +182,4 @@ def main():
 #Test
 if __name__ == '__main__':
     main()
+#Hi
