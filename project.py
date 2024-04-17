@@ -8,12 +8,15 @@ from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import Resize, Grayscale
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3, padding=1)  # Increased filters and added padding
+        self.conv1 = nn.Conv2d(in_channels, 32, 3, padding=1)  # Increased filters and added padding
         self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
         self.conv3 = nn.Conv2d(64, 128, 3, padding=1)  # Additional conv layer
         self.pool = nn.MaxPool2d(2, 2)
@@ -39,11 +42,6 @@ class Net(nn.Module):
         output = F.log_softmax(x, dim=1)
         return output
 
-
-class Net1(nn.Module):
-    pass
-
-import torch
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -99,7 +97,29 @@ def test(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), accuracy))
 
+def load_data(train_kwargs, test_kwargs, check):
+    normal_transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5187, 0.4988, 0.5141), (0.2281, 0.2557, 0.2630))
+        ])
+    grayscale_transform=transforms.Compose([
+        transforms.Grayscale(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5067), (0.2424))
+        ])
+    transform = normal_transform
+    if check == 1:
+        print("ran this")
+        transform = grayscale_transform
+    if check == 2:
+        #run code for handlandmark
+        pass
+    train_dataset = ImageFolder('new_train', transform=transform)
+    test_dataset = ImageFolder('new_test', transform=transform)
 
+    train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs, shuffle=False)
+    return train_loader, test_loader
 
 def main():
     # Training settings
@@ -126,6 +146,8 @@ def main():
                         help='how many batches to wait before logging training status')
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
+    parser.add_argument('--transform', type=str, default='normal',
+                        help='normal, grayscale, handlandmark')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     use_mps = not args.no_mps and torch.backends.mps.is_available()
@@ -149,22 +171,20 @@ def main():
                        'shuffle': True}
         train_kwargs.update(cuda_kwargs)
         test_kwargs.update(cuda_kwargs)
+    
+    check = 0
+    in_channels = 3
+    if args.transform == "grayscale":
+        check = 1
+        in_channels = 1
+    elif args.transform == "handlandmark":
+        check = 2
+        
 
-    transform=transforms.Compose([
-        transforms.Grayscale(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-        ])
+    train_loader, test_loader = load_data(train_kwargs, test_kwargs, check)
 
-    train_dataset = ImageFolder('new_train', transform=transform)
-    test_dataset = ImageFolder('new_test', transform=transform)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs, shuffle=False)
-
-    print(test_loader)
-
-    model = Net().to(device)
+    model = Net(in_channels).to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)

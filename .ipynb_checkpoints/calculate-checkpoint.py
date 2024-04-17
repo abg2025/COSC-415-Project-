@@ -31,7 +31,7 @@ def check_class_distribution(loader):
 
 def main():
     # Transform the data by converting images to tensors
-    transform = transforms.Compose([transforms.ToTensor()])
+    transform = transforms.Compose([transforms.Grayscale(), transforms.ToTensor()])
 
     # Assuming you have a dataset loader ready
     dataset = datasets.ImageFolder('new_train', transform=transform)
