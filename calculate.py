@@ -34,7 +34,7 @@ def main():
     transform = transforms.Compose([transforms.Grayscale(), transforms.ToTensor()])
 
     # Assuming you have a dataset loader ready
-    dataset = datasets.ImageFolder('new_train', transform=transform)
+    dataset = datasets.ImageFolder('hand_train', transform=transform)
     dataset1 = datasets.ImageFolder('new_test', transform=transform)
     train_loader = DataLoader(dataset, batch_size=100, shuffle=True, num_workers=1)  # More manageable batch size
     test_loader = DataLoader(dataset1, batch_size=100, shuffle=True, num_workers=1)

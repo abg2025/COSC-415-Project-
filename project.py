@@ -107,15 +107,21 @@ def load_data(train_kwargs, test_kwargs, check):
         transforms.ToTensor(),
         transforms.Normalize((0.5067), (0.2424))
         ])
+    hand_transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.0217), (0.1261))
+        ])
     transform = normal_transform
     if check == 1:
         print("ran this")
         transform = grayscale_transform
     if check == 2:
+        print("handlandmark using")
         #run code for handlandmark
+        transform = hand_transform
         pass
-    train_dataset = ImageFolder('new_train', transform=transform)
-    test_dataset = ImageFolder('new_test', transform=transform)
+    train_dataset = ImageFolder('hand_train', transform=transform)
+    test_dataset = ImageFolder('hand_test', transform=transform)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs, shuffle=False)
