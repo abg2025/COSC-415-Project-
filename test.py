@@ -4,8 +4,8 @@ import mediapipe as mp
 import numpy as np
 
 # Define paths
-input_dir = 'new_train'
-output_dir = 'hand_train'
+input_dir = 'new_test'
+output_dir = 'hand_test'
 
 # Initialize MediaPipe Hands module
 mp_hands = mp.solutions.hands
@@ -40,14 +40,9 @@ def process_and_annotate_image(image_path, save_path):
                 mp_drawing.draw_landmarks(
                     black_image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # Save the annotated image only if landmarks were detected
-            cv2.imwrite(save_path, black_image)
-            print("Saved annotated image to:", save_path)
-        else:
-            # Check if the label is 'nothing' which indicates no hand expected
-            if 'nothing' in image_path:
-                cv2.imwrite(save_path, black_image)
-                print("Saved blank image for 'nothing' label to:", save_path)
+        # Save the annotated image only if landmarks were detected
+        cv2.imwrite(save_path, black_image)
+        print("Saved annotated image to:", save_path)
 
 # Walk through input directory and process each image
 for subdir, dirs, files in os.walk(input_dir):
