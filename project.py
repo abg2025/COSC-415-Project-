@@ -8,9 +8,8 @@ from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import Resize, Grayscale
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+import numpy as np
 
 
 class Net(nn.Module):
@@ -97,14 +96,52 @@ def test(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), accuracy))
 
+
+
+def final_evaluation(model, device, test_loader):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    all_preds = []
+    all_targets = []
+    
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            test_loss += F.nll_loss(output, target, reduction='sum').item()
+            pred = output.argmax(dim=1, keepdim=True)
+            correct += pred.eq(target.view_as(pred)).sum().item()
+            all_preds.extend(pred.view_as(target).cpu().numpy())
+            all_targets.extend(target.cpu().numpy())
+
+    # Metrics Calculation
+    test_loss /= len(test_loader.dataset)
+    accuracy = 100. * correct / len(test_loader.dataset)
+    precision = precision_score(all_targets, all_preds, average='macro')
+    recall = recall_score(all_targets, all_preds, average='macro')
+    f1 = f1_score(all_targets, all_preds, average='macro')
+    
+   
+    print(f'\nFinal Evaluation: Loss: {test_loss:.4f}, Accuracy: {accuracy:.2f}%, Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}')
+    
+
+
 def load_data(train_kwargs, test_kwargs, check):
     normal_transform=transforms.Compose([
         transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(),     
+        transforms.Normalize((0.5187, 0.4988, 0.5141), (0.2281, 0.2557, 0.2630))
+        ])
+    horizontal_transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(),     
         transforms.Normalize((0.5187, 0.4988, 0.5141), (0.2281, 0.2557, 0.2630))
         ])
     grayscale_transform=transforms.Compose([
         transforms.Grayscale(),
         transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(),     
         transforms.Normalize((0.5067), (0.2424))
         ])
     hand_transform=transforms.Compose([
@@ -112,16 +149,23 @@ def load_data(train_kwargs, test_kwargs, check):
         transforms.Normalize((0.0217), (0.1261))
         ])
     transform = normal_transform
+    train = 'new_train'
+    test = 'new_test'
     if check == 1:
         print("ran this")
         transform = grayscale_transform
     if check == 2:
-        print("handlandmark using")
         #run code for handlandmark
         transform = hand_transform
-        pass
-    train_dataset = ImageFolder('hand_train', transform=transform)
-    test_dataset = ImageFolder('hand_test', transform=transform)
+        train = 'hand_train'
+        test = 'hand_test'
+    if check == 3:
+         transform = horizontal_transform
+        
+        
+        
+    train_dataset = ImageFolder(train, transform=transform)
+    test_dataset = ImageFolder(test, transform=transform)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs, shuffle=False)
@@ -134,7 +178,7 @@ def main():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=14, metavar='N',
+    parser.add_argument('--epochs', type=int, default=2, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
                         help='learning rate (default: 1.0)')
@@ -150,10 +194,10 @@ def main():
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
-    parser.add_argument('--save-model', action='store_true', default=False,
+    parser.add_argument('--save-model', action='store_true', default=True,
                         help='For Saving the current Model')
     parser.add_argument('--transform', type=str, default='normal',
-                        help='normal, grayscale, handlandmark')
+                        help='normal, grayscale, handlandmark, horizontal')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     use_mps = not args.no_mps and torch.backends.mps.is_available()
@@ -185,6 +229,8 @@ def main():
         in_channels = 1
     elif args.transform == "handlandmark":
         check = 2
+    elif args.transform == "horizontal":
+        check = 3
         
 
     train_loader, test_loader = load_data(train_kwargs, test_kwargs, check)
@@ -202,8 +248,15 @@ def main():
         test(model, device, test_loader)
         scheduler.step()
 
+    # After the training loop
+    final_evaluation(model, device, test_loader)
+
+    
+
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
+
+    
 
 #Test
 if __name__ == '__main__':
