@@ -34,7 +34,7 @@ def main():
 
     # Load your datasets
     train_dataset = datasets.ImageFolder('hand2_train', transform=transform)
-    test_dataset = datasets.ImageFolder('hand2_test', transform=transform)
+    test_dataset = datasets.ImageFolder('hand_not_removed_test', transform=transform)
 
     # Create DataLoaders
     train_loader = DataLoader(train_dataset, batch_size=100, num_workers=1)

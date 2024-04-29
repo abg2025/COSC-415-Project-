@@ -5,7 +5,7 @@ import numpy as np
 
 # Define paths
 input_dir = 'new2_test'
-output_dir = 'hand2_test'
+output_dir = 'hand_not_removed_test'
 
 # Initialize MediaPipe Hands module
 mp_hands = mp.solutions.hands
@@ -45,20 +45,20 @@ def process_and_annotate_image(image_path, save_path):
                 mp_drawing.draw_landmarks(
                     black_image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
             
-            # # Check if the output directory has fewer than 450 images before saving
-            # if get_image_count(os.path.dirname(save_path)) < 450:
-        cv2.imwrite(save_path, black_image)
-        print("Saved annotated image to:", save_path)
-            # else:
-            #     print("Image not saved, directory has reached the limit of 450 images.")
-        # else:
-        #     # Check if the label is 'nothing' which indicates no hand expected
-        #     if 'nothing' in image_path:
-        #         if get_image_count(os.path.dirname(save_path)) < 450:
-        #             cv2.imwrite(save_path, black_image)
-        #             print("Saved blank image for 'nothing' label to:", save_path)
-        #         else:
-        #             print("Image not saved, directory has reached the limit of 450 images.")
+            # Check if the output directory has fewer than 450 images before saving
+            if get_image_count(os.path.dirname(save_path)) < 450:
+                cv2.imwrite(save_path, black_image)
+                print("Saved annotated image to:", save_path)
+            else:
+                print("Image not saved, directory has reached the limit of 450 images.")
+        else:
+        # Check if the label is 'nothing' which indicates no hand expected
+            if 'nothing' in image_path:
+                if get_image_count(os.path.dirname(save_path)) < 450:
+                    cv2.imwrite(save_path, black_image)
+                    print("Saved blank image for 'nothing' label to:", save_path)
+                else:
+                    print("Image not saved, directory has reached the limit of 450 images.")
 
 # Walk through input directory and process each image
 for subdir, dirs, files in os.walk(input_dir):
