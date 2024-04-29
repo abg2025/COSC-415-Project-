@@ -17,36 +17,38 @@ def get_mean_std(loader):
 
 
 
-def check_class_distribution(loader):
+def check_class_distribution(loader, class_names):
     all_labels = []
     for _, labels in loader:
         all_labels.extend(labels.tolist())
     label_count = Counter(all_labels)
     for label, count in label_count.items():
-        print(f'Class {label}: {count} instances')
+        print(f'Class {class_names[label]}: {count} instances')
 
 
     
-   
+def main():   
 
-def main():
-    # Transform the data by converting images to tensors
-    transform = transforms.Compose([transforms.Grayscale(), transforms.ToTensor()])
+# Transform the data by converting images to tensors
+    transform = transforms.Compose([transforms.ToTensor()])
 
-    # Assuming you have a dataset loader ready
-    dataset = datasets.ImageFolder('hand_train', transform=transform)
-    dataset1 = datasets.ImageFolder('new_test', transform=transform)
-    train_loader = DataLoader(dataset, batch_size=100, shuffle=True, num_workers=1)  # More manageable batch size
-    test_loader = DataLoader(dataset1, batch_size=100, shuffle=True, num_workers=1)
+    # Load your datasets
+    train_dataset = datasets.ImageFolder('new2_train', transform=transform)
+    test_dataset = datasets.ImageFolder('new2_test', transform=transform)
+
+    # Create DataLoaders
+    train_loader = DataLoader(train_dataset, batch_size=100, num_workers=1)
+    test_loader = DataLoader(test_dataset, batch_size=100, shuffle=True, num_workers=1)
+
+    # Get class names
+    class_names = train_dataset.classes  # This assumes train and test have the same classes
 
     # Use this function with your train_loader and test_loader
-    #check_class_distribution(train_loader)
-    #check_class_distribution(test_loader)
-
-
-    mean, std = get_mean_std(train_loader)
-    print("Mean:", mean)
-    print("Standard Deviation:", std)
+    print("Training Set Class Distribution:")
+    check_class_distribution(train_loader, class_names)
+    
+    print("\nTesting Set Class Distribution:")
+    check_class_distribution(test_loader, class_names)
 
 
 

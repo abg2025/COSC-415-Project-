@@ -4,12 +4,17 @@ import mediapipe as mp
 import numpy as np
 
 # Define paths
-input_dir = 'new_test'
-output_dir = 'hand_test'
+input_dir = 'new2_train'
+output_dir = 'hand2_train'
 
 # Initialize MediaPipe Hands module
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
+
+# Function to count the number of images in a directory
+def get_image_count(directory):
+    """ Count the number of files in a directory. """
+    return len([name for name in os.listdir(directory) if os.path.isfile(os.path.join(directory, name))])
 
 # Function to process and annotate images
 def process_and_annotate_image(image_path, save_path):
@@ -39,10 +44,21 @@ def process_and_annotate_image(image_path, save_path):
             for hand_landmarks in results.multi_hand_landmarks:
                 mp_drawing.draw_landmarks(
                     black_image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-        # Save the annotated image only if landmarks were detected
-        cv2.imwrite(save_path, black_image)
-        print("Saved annotated image to:", save_path)
+            
+            # Check if the output directory has fewer than 450 images before saving
+            if get_image_count(os.path.dirname(save_path)) < 450:
+                cv2.imwrite(save_path, black_image)
+                print("Saved annotated image to:", save_path)
+            else:
+                print("Image not saved, directory has reached the limit of 450 images.")
+        else:
+            # Check if the label is 'nothing' which indicates no hand expected
+            if 'nothing' in image_path:
+                if get_image_count(os.path.dirname(save_path)) < 450:
+                    cv2.imwrite(save_path, black_image)
+                    print("Saved blank image for 'nothing' label to:", save_path)
+                else:
+                    print("Image not saved, directory has reached the limit of 450 images.")
 
 # Walk through input directory and process each image
 for subdir, dirs, files in os.walk(input_dir):
