@@ -4,8 +4,8 @@ import mediapipe as mp
 import numpy as np
 
 # Define paths
-input_dir = 'new2_test'
-output_dir = 'hand_not_removed_test'
+input_dir = 'Hand_Signs'
+output_dir = 'hand3_test'
 
 # Initialize MediaPipe Hands module
 mp_hands = mp.solutions.hands
